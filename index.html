@@ -1,201 +1,506 @@
+ ```html
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>IMRANE - لعبة الثورة الصناعية السحرية</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تطبيق تواصل - Tawasol App</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Cairo -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            accent: '#06b6d4',
+                            glow: '#8b5cf6'
+                        },
+                        darkbg: '#0b0f19',
+                        cardbg: '#161e2e'
+                    },
+                    fontFamily: {
+                        cairo: ['Cairo', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-        body { background: #050508; color: #fff; font-family: sans-serif; overflow: hidden; }
-        #game-container { width: 100vw; height: 100vh; position: relative; }
-        .hud { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; }
-        .top-bar { display: flex; justify-content: space-between; align-items: flex-start; }
-        .stats-box { background: rgba(15, 15, 25, 0.9); border: 2px solid #ff4500; border-radius: 10px; padding: 10px 20px; display: flex; gap: 20px; font-weight: bold; }
-        .stat-val { font-size: 1.4rem; color: #ff8c00; text-align: center; }
-        .stat-lbl { font-size: 0.75rem; color: #aaa; text-align: center; }
-        .screen-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5,5,8,0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; pointer-events: auto; z-index: 10; text-align: center; padding: 20px; }
-        .btn-start { background: linear-gradient(135deg, #ff4500, #ff8c00); border: none; padding: 15px 40px; font-size: 1.5rem; font-weight: bold; color: #fff; border-radius: 30px; cursor: pointer; box-shadow: 0 0 20px rgba(255,69,0,0.6); margin-top: 20px; }
-        .crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 16px; height: 16px; pointer-events: none; border: 2px solid rgba(0, 255, 255, 0.8); border-radius: 50%; }
-        .controls-hint { position: absolute; bottom: 20px; width: 100%; text-align: center; color: #00ffff; font-size: 0.9rem; pointer-events: none; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #05070d;
+            color: #f3f4f6;
+            overflow-x: hidden;
+        }
+
+        /* Glassmorphism styles */
+        .glass-card {
+            background: rgba(22, 30, 46, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-input {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(8px);
+        }
+
+        .glass-input:focus-within {
+            border-color: #6366f1;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
+        }
+
+        /* Ambient Glow Effects */
+        .glow-sphere-1 {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.35) 0%, rgba(0, 0, 0, 0) 70%);
+            top: -50px;
+            right: -50px;
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .glow-sphere-2 {
+            position: absolute;
+            width: 350px;
+            height: 350px;
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.25) 0%, rgba(0, 0, 0, 0) 70%);
+            bottom: -50px;
+            left: -50px;
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Screen Transitions */
+        .step-screen {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .screen-hidden-left {
+            opacity: 0;
+            transform: translateX(-50px);
+            pointer-events: none;
+            position: absolute;
+            width: 100%;
+        }
+
+        .screen-hidden-right {
+            opacity: 0;
+            transform: translateX(50px);
+            pointer-events: none;
+            position: absolute;
+            width: 100%;
+        }
+
+        .screen-active {
+            opacity: 1;
+            transform: translateX(0);
+            position: relative;
+            width: 100%;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.4);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.7);
+        }
+
+        /* Pulse Floating Animation */
+        @keyframes floating {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(1deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+        .animate-float {
+            animation: floating 5s ease-in-out infinite;
+        }
     </style>
 </head>
-<body>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 relative selection:bg-brand-500 selection:text-white">
 
-<div id="game-container">
-    <div class="crosshair"></div>
-    <div class="hud">
-        <div class="top-bar">
-            <div class="stats-box">
-                <div><div class="stat-val" id="score">0</div><div class="stat-lbl">النقاط</div></div>
-                <div><div class="stat-val" id="hp">100</div><div class="stat-lbl">الطاقة</div></div>
+    <!-- Background Glow Elements -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="glow-sphere-1"></div>
+        <div class="glow-sphere-2"></div>
+    </div>
+
+    <!-- Mode Toggle Option -->
+    <div class="mb-4 z-20 flex items-center gap-3 bg-slate-900/80 px-4 py-2 rounded-full border border-slate-800 text-xs text-slate-400 backdrop-blur-md shadow-lg">
+        <span class="flex items-center gap-1.5"><i class="fa-solid fa-mobile-screen text-brand-500"></i> عرض الإطار:</span>
+        <button id="toggleMobileFrameBtn" onclick="toggleDeviceFrame()" class="hover:text-white transition px-2 py-1 rounded bg-slate-800 border border-slate-700">
+            شاشة هاتف
+        </button>
+    </div>
+
+    <!-- Main Container -->
+    <div id="deviceContainer" class="w-full max-w-md bg-darkbg border border-slate-800 rounded-3xl shadow-2xl overflow-hidden relative z-10 transition-all duration-500 min-h-[680px] flex flex-col justify-between">
+        
+        <!-- Status Bar -->
+        <div class="px-6 pt-4 pb-2 flex justify-between items-center text-xs text-slate-400 z-20 select-none">
+            <span id="liveTime" class="font-semibold tracking-wider">14:14</span>
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-signal text-[10px]"></i>
+                <i class="fa-solid fa-wifi text-[10px]"></i>
+                <i class="fa-solid fa-battery-three-quarters text-xs"></i>
             </div>
         </div>
-        <div class="controls-hint">تحرك بـ W A S D أو أسهم لوحة المفاتيح وانقر لإطلاق النار</div>
+
+        <!-- Content Area -->
+        <div class="relative flex-1 flex flex-col p-6 justify-between overflow-hidden">
+            
+            <!-- SCREEN 1: WELCOME -->
+            <div id="stepWelcome" class="step-screen screen-active flex flex-col justify-between h-full">
+                
+                <div class="text-center pt-2">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-500 text-xs font-semibold mb-4">
+                        <span class="w-2 h-2 rounded-full bg-brand-accent animate-pulse"></span>
+                        الجيل الجديد من المراسلة
+                    </div>
+                </div>
+
+                <!-- Illustration -->
+                <div class="my-auto py-6 flex flex-col items-center justify-center relative">
+                    <div class="relative w-48 h-48 flex items-center justify-center animate-float">
+                        <div class="absolute inset-0 rounded-full bg-gradient-to-tr from-brand-600/30 to-brand-accent/30 blur-xl"></div>
+                        
+                        <svg class="w-44 h-44 relative z-10 drop-shadow-2xl" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="35" y="30" width="130" height="130" rx="40" fill="url(#grad1)" fill-opacity="0.2" stroke="url(#grad1)" stroke-width="2"/>
+                            <circle cx="100" cy="100" r="45" stroke="#06b6d4" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.6"/>
+                            <rect x="50" y="60" width="85" height="65" rx="20" fill="url(#grad2)" />
+                            <path d="M65 125L55 140L80 125H65Z" fill="#4f46e5"/>
+                            <rect x="80" y="85" width="70" height="55" rx="18" fill="url(#grad3)" />
+                            <path d="M135 140L142 150L125 140H135Z" fill="#06b6d4"/>
+                            <circle cx="100" cy="95" r="12" fill="#1e293b"/>
+                            <rect x="94" y="92" width="12" height="10" rx="2" fill="#38bdf8"/>
+                            <path d="M97 92V88C97 86.34 98.34 85 100 85C101.65 85 103 86.34 103 88V92" stroke="#38bdf8" stroke-width="2"/>
+                            <line x1="68" y1="80" x2="105" y2="80" stroke="white" stroke-width="3" stroke-linecap="round"/>
+                            <line x1="68" y1="92" x2="90" y2="92" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+                            <line x1="95" y1="105" x2="135" y2="105" stroke="white" stroke-width="3" stroke-linecap="round"/>
+                            <line x1="95" y1="117" x2="120" y2="117" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+                            <circle cx="45" cy="50" r="3" fill="#8b5cf6"/>
+                            <circle cx="160" cy="70" r="4" fill="#06b6d4"/>
+                            <circle cx="150" cy="150" r="2.5" fill="#6366f1"/>
+                            <defs>
+                                <linearGradient id="grad1" x1="0" y1="0" x2="200" y2="200" gradientUnits="userSpaceOnUse">
+                                    <stop stop-color="#6366f1"/>
+                                    <stop offset="1" stop-color="#06b6d4"/>
+                                </linearGradient>
+                                <linearGradient id="grad2" x1="50" y1="60" x2="135" y2="125" gradientUnits="userSpaceOnUse">
+                                    <stop stop-color="#6366f1"/>
+                                    <stop offset="1" stop-color="#4f46e5"/>
+                                </linearGradient>
+                                <linearGradient id="grad3" x1="80" y1="85" x2="150" y2="140" gradientUnits="userSpaceOnUse">
+                                    <stop stop-color="#06b6d4"/>
+                                    <stop offset="1" stop-color="#0891b2"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+
+                    <h1 class="text-2xl font-bold tracking-tight text-white mt-4">
+                        مرحباً بك في <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-500 to-brand-accent">تواصل</span>
+                    </h1>
+                    <p class="text-slate-400 text-sm text-center mt-2 px-4 leading-relaxed">
+                        تطبيق مراسلة فوري، آمن، ومحمي بتشفير تام لجميع محادثاتك.
+                    </p>
+                </div>
+
+                <!-- Controls -->
+                <div class="space-y-4 pt-2">
+                    <div class="relative">
+                        <button onclick="toggleLangDropdown()" class="w-full glass-input py-2.5 px-4 rounded-xl text-slate-300 text-xs flex items-center justify-between hover:bg-slate-800/50 transition">
+                            <span class="flex items-center gap-2">
+                                <i class="fa-solid fa-globe text-brand-accent"></i>
+                                <span id="currentLangText">العربية</span>
+                            </span>
+                            <i class="fa-solid fa-chevron-down text-slate-400 text-[10px]"></i>
+                        </button>
+                        
+                        <div id="langDropdown" class="hidden absolute bottom-full mb-2 right-0 left-0 glass-card rounded-xl border border-slate-700/60 p-1.5 shadow-xl z-30">
+                            <button onclick="selectLanguage('العربية', 'ar')" class="w-full text-right px-3 py-2 text-xs text-white hover:bg-brand-500/20 rounded-lg transition flex items-center justify-between">
+                                <span>العربية</span>
+                                <i class="fa-solid fa-check text-brand-accent text-xs"></i>
+                            </button>
+                            <button onclick="selectLanguage('English', 'en')" class="w-full text-right px-3 py-2 text-xs text-slate-300 hover:bg-brand-500/20 rounded-lg transition">
+                                English
+                            </button>
+                            <button onclick="selectLanguage('Français', 'fr')" class="w-full text-right px-3 py-2 text-xs text-slate-300 hover:bg-brand-500/20 rounded-lg transition">
+                                Français
+                            </button>
+                        </div>
+                    </div>
+
+                    <p class="text-[11px] text-slate-400 text-center leading-relaxed">
+                        بالضغط على "الموافقة والمتابعة"، أنت توافق على 
+                        <a href="#" class="text-brand-accent hover:underline">الشروط والسياسات</a>.
+                    </p>
+
+                    <button onclick="goToStep(2)" class="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-accent text-white font-semibold text-sm shadow-lg shadow-brand-500/25 transition-all duration-300 transform active:scale-95 flex items-center justify-center gap-2 group">
+                        <span>الموافقة والمتابعة</span>
+                        <i class="fa-solid fa-arrow-left group-hover:-translate-x-1 transition-transform"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- SCREEN 2: PHONE INPUT -->
+            <div id="stepPhone" class="step-screen screen-hidden-right flex flex-col justify-between h-full">
+                <div>
+                    <div class="flex items-center justify-between mb-6">
+                        <button onclick="goToStep(1)" class="w-9 h-9 rounded-xl glass-input flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 transition">
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                        <span class="text-xs text-slate-400 font-medium">الخطوة 1 من 2</span>
+                        <div class="w-9"></div>
+                    </div>
+
+                    <div class="text-right">
+                        <h2 class="text-xl font-bold text-white tracking-wide">أدخل رقم هاتفك</h2>
+                        <p class="text-slate-400 text-xs mt-1.5 leading-relaxed">
+                            سنرسل لك كود تفعيل مكون من 6 أرقام عبر SMS.
+                        </p>
+                    </div>
+
+                    <div class="mt-8 space-y-4">
+                        <!-- Country Select Box -->
+                        <div class="relative">
+                            <label class="block text-xs text-slate-400 mb-1.5 font-medium">الدولة</label>
+                            <button type="button" onclick="toggleCountryDropdown()" class="w-full glass-input py-3 px-4 rounded-xl text-white text-sm flex items-center justify-between hover:border-brand-500/50 transition">
+                                <span class="flex items-center gap-3" id="selectedCountryDisplay">
+                                    <span class="text-lg">🇲🇦</span>
+                                    <span class="font-medium">المغرب</span>
+                                </span>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-slate-400 dir-ltr text-xs font-mono" id="selectedCodeDisplay">+212</span>
+                                    <i class="fa-solid fa-chevron-down text-slate-400 text-xs"></i>
+                                </div>
+                            </button>
+
+                            <div id="countryDropdown" class="hidden absolute top-full left-0 right-0 mt-2 glass-card rounded-2xl border border-slate-700/80 p-2 shadow-2xl z-40 max-h-60 overflow-y-auto">
+                                <div class="p-1 mb-2">
+                                    <input type="text" id="countrySearch" onkeyup="filterCountries()" placeholder="ابحث عن دولة..." class="w-full bg-slate-900/90 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-brand-500">
+                                </div>
+                                <div id="countryList" class="space-y-1"></div>
+                            </div>
+                        </div>
+
+                        <!-- Phone Input -->
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1.5 font-medium">رقم الهاتف</label>
+                            <div class="glass-input rounded-xl flex items-center overflow-hidden focus-within:ring-2 focus-within:ring-brand-500/50 transition">
+                                <div id="phoneDialCode" class="px-4 py-3 bg-slate-800/50 border-l border-slate-700/60 text-slate-300 font-mono text-sm dir-ltr">
+                                    +212
+                                </div>
+                                <input type="tel" id="phoneNumber" dir="ltr" placeholder="6 12 34 56 78" 
+                                       class="w-full bg-transparent py-3 px-4 text-white text-sm font-mono focus:outline-none placeholder:text-slate-600"
+                                       oninput="validatePhone()">
+                            </div>
+                            <p id="phoneError" class="text-rose-400 text-[11px] mt-1.5 hidden flex items-center gap-1">
+                                <i class="fa-solid fa-circle-exclamation"></i>
+                                <span>أدخل رقم هاتف صحيح.</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-6">
+                    <button id="submitPhoneBtn" onclick="submitVerification()" disabled class="w-full py-3.5 px-6 rounded-xl bg-slate-800 text-slate-500 font-semibold text-sm transition-all duration-300 flex items-center justify-center gap-2 cursor-not-allowed">
+                        <span>إرسال رمز التفعيل</span>
+                        <i class="fa-solid fa-paper-plane text-xs"></i>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Phone Bar Line -->
+        <div class="pb-2 flex justify-center">
+            <div class="w-32 h-1 bg-slate-700/50 rounded-full"></div>
+        </div>
     </div>
 
-    <div class="screen-overlay" id="start-screen">
-        <h1 style="font-size: 2.5rem; color: #ff4500; text-shadow: 0 0 15px rgba(255,69,0,0.6);">المتسلل IMRANE</h1>
-        <p style="color: #aaa; margin-top: 15px; max-width: 400px;">عالم الثورة الصناعية السحرية - تحالف الفولاذ ضد ترتيب الضباب</p>
-        <button class="btn-start" onclick="startGame()">بدء المهمة</button>
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 glass-card border border-brand-500/40 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3">
+        <div id="toastIcon" class="w-8 h-8 rounded-xl bg-brand-500/20 text-brand-accent flex items-center justify-center">
+            <i class="fa-solid fa-check"></i>
+        </div>
+        <div>
+            <h4 id="toastTitle" class="text-xs font-bold text-white">إشعارات</h4>
+            <p id="toastMessage" class="text-[11px] text-slate-300">تم التحديث</p>
+        </div>
     </div>
-</div>
 
-<script>
-let scene, camera, renderer;
-let player, enemies = [], bullets = [];
-let keys = {};
-let score = 0, health = 100;
-let isPlaying = false;
+    <script>
+        const countries = [
+            { name: "المغرب", code: "+212", flag: "🇲🇦" },
+            { name: "السعودية", code: "+966", flag: "🇸🇦" },
+            { name: "الإمارات", code: "+971", flag: "🇦🇪" },
+            { name: "مصر", code: "+20", flag: "🇪🇬" },
+            { name: "قطر", code: "+974", flag: "🇶🇦" },
+            { name: "الكويت", code: "+965", flag: "🇰🇼" },
+            { name: "الجزائر", code: "+213", flag: "🇩🇿" },
+            { name: "تونس", code: "+216", flag: "🇹🇳" }
+        ];
 
-function init() {
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0a0a12);
-    scene.fog = new THREE.FogExp2(0x0a0a12, 0.02);
+        let selectedCountry = countries[0];
+        let isMobileFrame = true;
 
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        window.onload = function() {
+            updateClock();
+            setInterval(updateClock, 10000);
+            renderCountries(countries);
+        };
 
-    renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.getElementById('game-container').appendChild(renderer.domElement);
-
-    // إضاءة عالم الأثير
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
-    scene.add(ambientLight);
-    const dirLight = new THREE.DirectionalLight(0x00ffff, 1.5);
-    dirLight.position.set(20, 40, 20);
-    scene.add(dirLight);
-
-    // الأرضية
-    const groundGeo = new THREE.PlaneGeometry(300, 300);
-    const groundMat = new THREE.MeshStandardMaterial({ color: 0x11111a, roughness: 0.9 });
-    const ground = new THREE.Mesh(groundGeo, groundMat);
-    ground.rotation.x = -Math.PI / 2;
-    scene.add(ground);
-
-    const grid = new THREE.GridHelper(300, 50, 0xff4500, 0x222233);
-    grid.position.y = 0.02;
-    scene.add(grid);
-
-    // شخصية imrane (Full Black Stealth Suit)
-    player = new THREE.Group();
-    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x111115, roughness: 0.5 });
-    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 1.5, 16), bodyMat);
-    body.position.y = 0.75;
-    
-    const headMat = new THREE.MeshStandardMaterial({ color: 0xd2b48c });
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 16), headMat);
-    head.position.y = 1.6;
-    
-    player.add(body, head);
-    scene.add(player);
-
-    // إنشاء أعداء تحالف الفولاذ
-    spawnEnemies(8);
-
-    window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
-    window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
-    window.addEventListener('resize', onWindowResize);
-    document.addEventListener('click', fireWeapon);
-
-    camera.position.set(0, 3, 5);
-}
-
-function spawnEnemies(count) {
-    for (let i = 0; i < count; i++) {
-        const botMat = new THREE.MeshStandardMaterial({ color: 0xff4500 });
-        const bot = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 1.5, 16), botMat);
-        bot.position.set((Math.random() - 0.5) * 120, 0.75, (Math.random() - 0.5) * 120);
-        bot.userData = { hp: 50, speed: 0.04 + Math.random() * 0.03 };
-        scene.add(bot);
-        enemies.push(bot);
-    }
-}
-
-function startGame() {
-    document.getElementById('start-screen').style.display = 'none';
-    isPlaying = true;
-    animate();
-}
-
-function fireWeapon() {
-    if (!isPlaying) return;
-    const bGeo = new THREE.SphereGeometry(0.12, 8, 8);
-    const bMat = new THREE.MeshBasicMaterial({ color: 0x00ffff });
-    const bullet = new THREE.Mesh(bGeo, bMat);
-    
-    bullet.position.copy(player.position);
-    bullet.position.y += 1.2;
-    bullet.userData = { dir: new THREE.Vector3(0, 0, -1).applyQuaternion(player.quaternion) };
-    
-    scene.add(bullet);
-    bullets.push(bullet);
-}
-
-function animate() {
-    if (!isPlaying) return;
-    requestAnimationFrame(animate);
-
-    // حركة اللاعب
-    const moveSpeed = 0.15;
-    if (keys['w'] || keys['arrowup']) player.translateZ(-moveSpeed);
-    if (keys['s'] || keys['arrowdown']) player.translateZ(moveSpeed);
-    if (keys['a'] || keys['arrowleft']) player.rotation.y += 0.04;
-    if (keys['d'] || keys['arrowright']) player.rotation.y -= 0.04;
-
-    // تتبع الكاميرا
-    camera.position.x = player.position.x + Math.sin(player.rotation.y) * 4;
-    camera.position.z = player.position.z + Math.cos(player.rotation.y) * 4;
-    camera.position.y = player.position.y + 2.5;
-    camera.lookAt(player.position.x, player.position.y + 1, player.position.z);
-
-    // حركة الأعداء نحوك
-    enemies.forEach((bot, index) => {
-        bot.lookAt(player.position);
-        bot.translateZ(bot.userData.speed);
-
-        if (bot.position.distanceTo(player.position) < 1.2) {
-            health -= 0.5;
-            document.getElementById('hp').innerText = Math.max(0, Math.floor(health));
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('liveTime').textContent = `${hours}:${minutes}`;
         }
-    });
 
-    // تحديث الرصاص والاصطدامات
-    for (let i = bullets.length - 1; i >= 0; i--) {
-        const b = bullets[i];
-        b.position.addScaledVector(b.userData.dir, 1.2);
-
-        enemies.forEach((bot, bIdx) => {
-            if (b.position.distanceTo(bot.position) < 1.0) {
-                scene.remove(bot);
-                enemies.splice(bIdx, 1);
-                scene.remove(b);
-                bullets.splice(i, 1);
-                
-                score += 10;
-                document.getElementById('score').innerText = score;
-                
-                // إعادة توليد عدو جديد لضمان استمرار اللعب
-                setTimeout(() => spawnEnemies(1), 1000);
+        function toggleDeviceFrame() {
+            const container = document.getElementById('deviceContainer');
+            const btn = document.getElementById('toggleMobileFrameBtn');
+            if (isMobileFrame) {
+                container.classList.remove('max-w-md', 'min-h-[680px]', 'rounded-3xl');
+                container.classList.add('max-w-xl', 'min-h-[600px]', 'rounded-2xl');
+                btn.textContent = 'إطار هاتف';
+                isMobileFrame = false;
+            } else {
+                container.classList.add('max-w-md', 'min-h-[680px]', 'rounded-3xl');
+                container.classList.remove('max-w-xl', 'min-h-[600px]', 'rounded-2xl');
+                btn.textContent = 'شاشة واسعة';
+                isMobileFrame = true;
             }
-        });
-
-        if (b && b.position.length() > 200) {
-            scene.remove(b);
-            bullets.splice(i, 1);
         }
-    }
 
-    renderer.render(scene, camera);
-}
+        function goToStep(stepNumber) {
+            const step1 = document.getElementById('stepWelcome');
+            const step2 = document.getElementById('stepPhone');
 
-function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-}
+            if (stepNumber === 2) {
+                step1.classList.remove('screen-active');
+                step1.classList.add('screen-hidden-left');
+                step2.classList.remove('screen-hidden-right');
+                step2.classList.add('screen-active');
+            } else {
+                step2.classList.remove('screen-active');
+                step2.classList.add('screen-hidden-right');
+                step1.classList.remove('screen-hidden-left');
+                step1.classList.add('screen-active');
+            }
+        }
 
-init();
-</script>
+        function toggleLangDropdown() {
+            document.getElementById('langDropdown').classList.toggle('hidden');
+        }
+
+        function selectLanguage(langName) {
+            document.getElementById('currentLangText').textContent = langName;
+            document.getElementById('langDropdown').classList.add('hidden');
+            showToast('تغيير اللغة', `تم التحويل إلى ${langName}`);
+        }
+
+        function toggleCountryDropdown() {
+            document.getElementById('countryDropdown').classList.toggle('hidden');
+        }
+
+        function renderCountries(list) {
+            const container = document.getElementById('countryList');
+            container.innerHTML = '';
+            list.forEach(c => {
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'w-full text-right px-3 py-2 text-xs text-slate-200 hover:bg-brand-500/20 rounded-xl transition flex items-center justify-between';
+                item.innerHTML = `
+                    <span class="flex items-center gap-2">
+                        <span>${c.flag}</span>
+                        <span>${c.name}</span>
+                    </span>
+                    <span class="text-slate-400 dir-ltr font-mono">${c.code}</span>
+                `;
+                item.onclick = () => selectCountry(c);
+                container.appendChild(item);
+            });
+        }
+
+        function filterCountries() {
+            const query = document.getElementById('countrySearch').value.toLowerCase();
+            const filtered = countries.filter(c => c.name.includes(query) || c.code.includes(query));
+            renderCountries(filtered);
+        }
+
+        function selectCountry(country) {
+            selectedCountry = country;
+            document.getElementById('selectedCountryDisplay').innerHTML = `
+                <span class="text-lg">${country.flag}</span>
+                <span class="font-medium">${country.name}</span>
+            `;
+            document.getElementById('selectedCodeDisplay').textContent = country.code;
+            document.getElementById('phoneDialCode').textContent = country.code;
+            document.getElementById('countryDropdown').classList.add('hidden');
+            validatePhone();
+        }
+
+        function validatePhone() {
+            const phoneInput = document.getElementById('phoneNumber');
+            const submitBtn = document.getElementById('submitPhoneBtn');
+            const errorMsg = document.getElementById('phoneError');
+            const rawVal = phoneInput.value.replace(/\s+/g, '');
+            
+            if (rawVal.length >= 7 && /^\d+$/.test(rawVal)) {
+                errorMsg.classList.add('hidden');
+                submitBtn.disabled = false;
+                submitBtn.className = "w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-accent text-white font-semibold text-sm shadow-lg shadow-brand-500/25 transition-all duration-300 transform active:scale-95 flex items-center justify-center gap-2 cursor-pointer";
+            } else {
+                if (rawVal.length > 0) errorMsg.classList.remove('hidden');
+                else errorMsg.classList.add('hidden');
+                submitBtn.disabled = true;
+                submitBtn.className = "w-full py-3.5 px-6 rounded-xl bg-slate-800 text-slate-500 font-semibold text-sm transition-all duration-300 flex items-center justify-center gap-2 cursor-not-allowed";
+            }
+        }
+
+        function submitVerification() {
+            const phoneNum = document.getElementById('phoneNumber').value;
+            showToast('جاري التفعيل...', `تم إرسال رمز SMS إلى ${selectedCountry.code} ${phoneNum}`);
+        }
+
+        function showToast(title, message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastTitle').textContent = title;
+            document.getElementById('toastMessage').textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3500);
+        }
+    </script>
 </body>
 </html>
+```
